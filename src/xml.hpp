@@ -3,7 +3,9 @@
 #include <string_view>
 #include <vector>
 
+#define CUTIL_NS xml
 #include "util/result.hpp"
+#undef CUTIL_NS
 
 namespace xml {
 struct Attribute {
