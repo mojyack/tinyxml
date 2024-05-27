@@ -1,3 +1,4 @@
+#include <cstring>
 #include <stack>
 
 #include "xml.hpp"
