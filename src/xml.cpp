@@ -1,4 +1,5 @@
 #include "xml.hpp"
+#include "util/print.hpp"
 
 namespace xml {
 auto Node::get_attrs(AttributeQuery* const queries, const size_t len) const -> bool {

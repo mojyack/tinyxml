@@ -1,3 +1,5 @@
+#include "macros/unwrap.hpp"
+#include "util/print.hpp"
 #include "xml.hpp"
 
 namespace xml {
@@ -27,7 +29,7 @@ auto dump_node(const Node& node, const std::string_view prefix, const bool print
 
 struct TestCase {
     std::string         str;
-    Result<Node, Error> expects;
+    std::optional<Node> expects;
 };
 
 static const auto test_cases = std::array{
@@ -67,67 +69,45 @@ static const auto test_cases = std::array{
     },
     TestCase{
         R"(node></node>)",
-        Error::NotXML,
+        std::nullopt,
     },
     TestCase{
         R"(<node1><node2></node2></node1></node0>)",
-        Error::NodeStackUnderFlow,
+        std::nullopt,
     },
     TestCase{
         R"(<node1><node2></node1></node2>)",
-        Error::OpenCloseMismatch,
+        std::nullopt,
     },
     TestCase{
         R"(<node>)",
-        Error::Incomplete,
+        std::nullopt,
     },
     TestCase{
         R"(<node1><node2><node1/>)",
-        Error::Incomplete,
+        std::nullopt,
     },
 };
+} // namespace xml
 
-auto test() -> bool {
-    auto pass_count = 0;
-    for(const auto& c : test_cases) {
+auto main() -> int {
+    for(const auto& c : xml::test_cases) {
         print(c.str);
-        auto n_r = parse(c.str);
         if(c.expects) {
-            if(!n_r) {
-                print("parse failed: ", int(n_r.as_error()));
-                continue;
-            }
-            const auto& n      = n_r.as_value();
-            const auto& expect = c.expects.as_value();
-            if(n != expect) {
+            unwrap(node, xml::parse(c.str), "parse failed");
+            const auto& expect = *c.expects;
+            if(node != expect) {
                 print("parse result did not match");
                 print("expect: ");
                 dump_node(expect);
                 print("got: ");
-                dump_node(n);
+                dump_node(node);
                 continue;
             }
         } else {
-            if(n_r) {
-                print("parse did not fail");
-                continue;
-            }
-            const auto  e      = n_r.as_error();
-            const auto& expect = c.expects.as_error();
-            if(e != expect) {
-                print("parse error did not match");
-                print("expect: Error ", int(expect));
-                print("got: Error ", int(e));
-                continue;
-            }
+            ensure(!xml::parse(c.str), "parse did not fail");
         }
         print("pass");
-        pass_count += 1;
     }
-    return pass_count == test_cases.size();
-}
-} // namespace xml
-
-auto main() -> int {
-    return xml::test() ? 0 : 1;
+    return 0;
 }

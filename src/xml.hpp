@@ -3,10 +3,6 @@
 #include <string_view>
 #include <vector>
 
-#define CUTIL_NS xml
-#include "util/result.hpp"
-#undef CUTIL_NS
-
 namespace xml {
 struct Attribute {
     std::string key;
@@ -72,15 +68,8 @@ struct Node {
     auto operator==(const Node& o) const -> bool;
 };
 
-enum class Error {
-    NotXML,
-    NodeStackUnderFlow,
-    OpenCloseMismatch,
-    Incomplete,
-};
-
 // parser.cpp
-auto parse(std::string_view str) -> Result<Node, Error>;
+auto parse(std::string_view str) -> std::optional<Node>;
 
 // deparser.cpp
 auto deparse(const Node& node) -> std::string;

@@ -1,5 +1,6 @@
 #include <stack>
 
+#include "macros/unwrap.hpp"
 #include "xml.hpp"
 
 namespace {
@@ -20,15 +21,13 @@ struct StringReader {
     size_t           cursor;
     std::string_view str;
 
-    auto peek() const -> char {
-        if(cursor >= str.size()) {
-            throw Error::Incomplete;
-        }
+    auto peek() const -> std::optional<char> {
+        ensure(cursor < str.size());
         return str[cursor];
     }
 
-    auto read() -> char {
-        const auto c = peek();
+    auto read() -> std::optional<char> {
+        unwrap(c, peek());
         cursor += 1;
         return c;
     }
@@ -38,10 +37,10 @@ struct StringReader {
     }
 
     template <class... Args>
-    auto read_until(const Args... args) -> std::string_view {
+    auto read_until(const Args... args) -> std::optional<std::string_view> {
         auto begin = cursor;
     loop:
-        const auto c = read();
+        unwrap(c, read());
         if(contains(c, args...)) {
             cursor -= 1;
             return str.substr(begin, cursor - begin);
@@ -61,11 +60,8 @@ struct ParseElementNodeResult {
     bool leaf;
 };
 
-auto parse_element_node(StringReader& reader) -> Result<ParseElementNodeResult, Error> {
-    if(reader.read() != '<') {
-        return Error::NotXML;
-    }
-
+auto parse_element_node(StringReader& reader) -> std::optional<ParseElementNodeResult> {
+    ensure(reader.read() == '<');
     auto node = Node();
     {
         auto begin = reader.cursor;
@@ -87,22 +83,20 @@ auto parse_element_node(StringReader& reader) -> Result<ParseElementNodeResult, 
     }
     while(true) {
         reader.skip_while(' ');
-        const auto key = reader.read_until('=', '>');
-        reader.read(); // skip '=' or '>'
+        unwrap(key, reader.read_until('=', '>'));
+        ensure(reader.read()); // skip '=' or '>'
         if(key == "" || key == "/") {
             return ParseElementNodeResult{node, key == "/"};
         }
-        const auto dlm   = reader.read();
-        const auto value = reader.read_until(dlm);
-        reader.read(); // skip dlm
+        unwrap(dlm, reader.read());
+        unwrap(value, reader.read_until(dlm));
+        ensure(reader.read()); // skip dlm
         node.attrs.push_back({std::string(key), std::string(value)});
     }
 }
 
-auto parse_nodes(const std::string_view str) -> Result<Node, Error> {
-    if(str.empty() || str[0] != '<') {
-        return Error::NotXML;
-    }
+auto parse(const std::string_view str) -> std::optional<Node> {
+    ensure(!str.empty() && str[0] == '<');
 
     auto root       = Node();
     auto node_stack = std::stack<Node*>();
@@ -112,24 +106,19 @@ auto parse_nodes(const std::string_view str) -> Result<Node, Error> {
 
     while(!reader.is_eof()) {
         auto& parent = *node_stack.top();
-        if(reader.peek() != '<') {
-            parent.data = reader.read_until('<');
+        unwrap(next, reader.peek());
+        if(next != '<') {
+            unwrap(data, reader.read_until('<'));
+            parent.data = data;
             continue;
         }
 
-        auto pnr_r = parse_element_node(reader);
-        if(!pnr_r) {
-            return pnr_r.as_error();
-        }
-        auto& [node, leaf] = pnr_r.as_value();
+        unwrap(pnr, parse_element_node(reader));
+        auto& [node, leaf] = pnr;
 
         if(node.name.front() == '/') {
-            if(node_stack.size() < 2) {
-                return Error::NodeStackUnderFlow;
-            }
-            if(std::strcmp(parent.name.data(), node.name.data() + 1) != 0) {
-                return Error::OpenCloseMismatch;
-            }
+            ensure(node_stack.size() >= 2);
+            ensure(parent.name == node.name.substr(1), "open close mismatched");
             node_stack.pop();
             continue;
         }
@@ -142,18 +131,7 @@ auto parse_nodes(const std::string_view str) -> Result<Node, Error> {
         node_stack.push(&new_node);
     }
 
-    if(node_stack.size() != 1) {
-        return Error::Incomplete;
-    }
-
+    ensure(node_stack.size() == 1, "incomplete");
     return root.children[0];
-}
-
-auto parse(const std::string_view str) -> Result<Node, Error> {
-    try {
-        return parse_nodes(str);
-    } catch(const Error& e) {
-        return e;
-    }
 }
 } // namespace xml
