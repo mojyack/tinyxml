@@ -4,4 +4,4 @@ add_project_arguments('-Wno-missing-field-initializers', language: 'cpp')
 
 subdir('src')
 
-executable('example', tinyxml_src + tinyxml_debug_src) 
+executable('example', tinyxml_files + tinyxml_debug_files)
