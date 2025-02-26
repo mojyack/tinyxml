@@ -1,16 +1,13 @@
+#include <format>
+
 #include "xml.hpp"
 
 namespace xml {
 namespace {
 auto deparse(std::string& str, const Node& node) -> void {
-    str += "<";
-    str += node.name;
+    str += std::format("<{}", node.name);
     for(const auto& a : node.attrs) {
-        str += " ";
-        str += a.key;
-        str += "=\"";
-        str += a.value;
-        str += "\"";
+        str += std::format(R"( {}="{}")", a.key, a.value);
     }
 
     const auto leaf = node.data.empty() && node.children.empty();
@@ -25,9 +22,7 @@ auto deparse(std::string& str, const Node& node) -> void {
     for(const auto& c : node.children) {
         deparse(str, c);
     }
-    str += "</";
-    str += node.name;
-    str += ">";
+    str += std::format("</{}>", node.name);
 }
 } // namespace
 

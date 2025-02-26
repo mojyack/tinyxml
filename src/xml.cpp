@@ -1,11 +1,13 @@
+#include <print>
+#include <ranges>
+#include <span>
+
 #include "xml.hpp"
-#include "util/print.hpp"
 
 namespace xml {
 auto Node::get_attrs(AttributeQuery* const queries, const size_t len) const -> bool {
-    auto found = 0u;
-    for(auto i = 0u; i < len; i += 1) {
-        auto& q = queries[i];
+    auto found = 0uz;
+    for(auto& q : std::span{queries, len}) {
         for(const auto& a : attrs) {
             if(a.key == q.key) {
                 q.value = a.value;
@@ -38,20 +40,20 @@ auto Node::operator==(const Node& o) const -> bool {
     if(name != o.name || data != o.data || attrs.size() != o.attrs.size() || children.size() != o.children.size()) {
         constexpr auto print_mismatch_reason = false;
         if(print_mismatch_reason) {
-            print(name, " ", o.name);
-            print(data, " ", o.data);
-            print(attrs.size(), " ", o.attrs.size());
-            print(children.size(), " ", o.children.size());
+            std::println("name {} {}", name, o.name);
+            std::println("data {} {}", data, o.data);
+            std::println("attr.size {} {}", attrs.size(), o.attrs.size());
+            std::println("children.size {} {}", children.size(), o.children.size());
         }
         return false;
     }
-    for(auto i = 0u; i < attrs.size(); i += 1) {
-        if(attrs[i].key != o.attrs[i].key || attrs[i].value != o.attrs[i].value) {
+    for(auto&& [a, b] : std::views::zip(attrs, o.attrs)) {
+        if(a.key != b.key || a.value != b.value) {
             return false;
         }
     }
-    for(auto i = 0u; i < children.size(); i += 1) {
-        if(children[i] != o.children[i]) {
+    for(auto&& [a, b] : std::views::zip(children, o.children)) {
+        if(a != b) {
             return false;
         }
     }

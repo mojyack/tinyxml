@@ -1,5 +1,4 @@
 #include "macros/unwrap.hpp"
-#include "util/print.hpp"
 #include "xml.hpp"
 
 namespace xml {
@@ -7,23 +6,23 @@ auto dump_node(const Node& node, const std::string_view prefix, const bool print
     const auto prefix2 = std::string(prefix) + "  ";
     const auto prefix4 = std::string(prefix) + "    ";
 
-    print(prefix, ".name = \"", node.name, "\",");
-    print(prefix, ".data = \"", node.data, "\",");
+    std::println(R"({}.name = "{}")", prefix, node.name);
+    std::println(R"({}.data = "{}")", prefix, node.data);
     if(!(node.attrs.empty() && !print_empty_fields)) {
-        print(prefix, ".attrs = {");
+        std::println("{}.attrs = {{", prefix);
         for(const auto& a : node.attrs) {
-            print(prefix2, "{\"", a.key, "\", \"", a.value, "\"},");
+            std::println(R"({}{{"{}"="{}"}},)", prefix2, a.key, a.value);
         }
-        print(prefix, "},");
+        std::println("{}}},", prefix);
     }
     if(!(node.children.empty() && !print_empty_fields)) {
-        print(prefix, ".children = {");
+        std::println("{}.children = {{", prefix);
         for(const auto& c : node.children) {
-            print(prefix2, "Node{");
+            std::println("{}Node{{", prefix);
             dump_node(c, prefix4);
-            print(prefix2, "},");
+            std::println("{}}},", prefix2);
         }
-        print(prefix, "},");
+        std::println("{}}},", prefix);
     }
 }
 
@@ -92,22 +91,22 @@ static const auto test_cases = std::array{
 
 auto main() -> int {
     for(const auto& c : xml::test_cases) {
-        print(c.str);
+        std::println("{}", c.str);
         if(c.expects) {
             unwrap(node, xml::parse(c.str), "parse failed");
             const auto& expect = *c.expects;
             if(node != expect) {
-                print("parse result did not match");
-                print("expect: ");
+                std::println("parse result did not match");
+                std::println("expect: ");
                 dump_node(expect);
-                print("got: ");
+                std::println("got: ");
                 dump_node(node);
                 continue;
             }
         } else {
             ensure(!xml::parse(c.str), "parse did not fail");
         }
-        print("pass");
+        std::println("pass");
     }
     return 0;
 }
