@@ -19,21 +19,22 @@ auto Node::get_attrs(AttributeQuery* const queries, const size_t len) const -> b
     return found == len;
 }
 
-auto Node::find_attr(const std::string_view key) const -> std::optional<std::string_view> {
-    for(const auto& a : attrs) {
-        if(a.key == key) {
-            return a.value;
+auto Node::find_attr(const std::string_view attr) -> std::string* {
+    for(auto& a : attrs) {
+        if(a.key == attr) {
+            return &a.value;
         }
     }
-    return std::nullopt;
+    return nullptr;
+}
+
+auto Node::find_attr(const std::string_view attr) const -> const std::string* {
+    return const_cast<Node*>(this)->find_attr(attr);
 }
 
 auto Node::is_attr_equal(std::string_view key, std::string_view value) const -> bool {
-    const auto attr_o = find_attr(key);
-    if(!attr_o.has_value()) {
-        return false;
-    }
-    return (*attr_o) == value;
+    const auto attr = find_attr(key);
+    return attr && (*attr) == value;
 }
 
 auto Node::operator==(const Node& o) const -> bool {

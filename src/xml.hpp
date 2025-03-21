@@ -21,7 +21,8 @@ struct Node {
     std::vector<Attribute> attrs;
     std::vector<Node>      children;
 
-    auto find_attr(std::string_view key) const -> std::optional<std::string_view>;
+    auto find_attr(std::string_view attr) -> std::string*;
+    auto find_attr(std::string_view attr) const -> const std::string*;
     auto is_attr_equal(std::string_view key, std::string_view value) const -> bool;
     auto get_attrs(AttributeQuery* queries, size_t len) const -> bool;
 
