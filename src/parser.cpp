@@ -1,6 +1,7 @@
 #include <stack>
 
 #include "macros/unwrap.hpp"
+#include "util/trim.hpp"
 #include "xml.hpp"
 
 namespace {
@@ -95,7 +96,8 @@ auto parse_element_node(StringReader& reader) -> std::optional<ParseElementNodeR
     }
 }
 
-auto parse(const std::string_view str) -> std::optional<Node> {
+auto parse(std::string_view str) -> std::optional<Node> {
+    str = trim(str);
     ensure(!str.empty() && str[0] == '<');
 
     auto root       = Node();
