@@ -37,6 +37,18 @@ auto Node::is_attr_equal(std::string_view key, std::string_view value) const -> 
     return attr && (*attr) == value;
 }
 
+auto Node::operator[](const std::string_view attr) -> std::string& {
+    if(const auto p = find_attr(attr)) {
+        return *p;
+    } else {
+        return attrs.emplace_back(Attribute{.key = std::string(attr)}).value;
+    }
+}
+
+auto Node::operator[](const std::string_view attr) const -> const std::string& {
+    return const_cast<Node&>(*this)[attr];
+}
+
 auto Node::operator==(const Node& o) const -> bool {
     if(name != o.name || data != o.data || attrs.size() != o.attrs.size() || children.size() != o.children.size()) {
         constexpr auto print_mismatch_reason = false;

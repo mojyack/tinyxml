@@ -67,6 +67,8 @@ struct Node {
         return std::move(*this);
     }
 
+    auto operator[](std::string_view attr) -> std::string&;
+    auto operator[](std::string_view attr) const -> const std::string&;
     auto operator==(const Node& o) const -> bool;
 };
 
