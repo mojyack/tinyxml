@@ -1,61 +1,11 @@
 #include <stack>
 
 #include "macros/unwrap.hpp"
+#include "string-reader.hpp"
 #include "util/trim.hpp"
 #include "xml.hpp"
 
-namespace {
-template <class T, class... Args>
-static auto contains(const T value, const T key, const Args... args) -> bool {
-    if(value == key) {
-        return true;
-    }
-    if constexpr(sizeof...(Args) > 0) {
-        return contains(value, args...);
-    }
-    return false;
-};
-} // namespace
-
 namespace xml {
-struct StringReader {
-    size_t           cursor;
-    std::string_view str;
-
-    auto peek() const -> std::optional<char> {
-        ensure(cursor < str.size());
-        return str[cursor];
-    }
-
-    auto read() -> std::optional<char> {
-        unwrap(c, peek());
-        cursor += 1;
-        return c;
-    }
-
-    auto is_eof() const -> bool {
-        return cursor >= str.size();
-    }
-
-    template <class... Args>
-    auto read_until(const Args... args) -> std::optional<std::string_view> {
-        auto begin = cursor;
-    loop:
-        unwrap(c, read());
-        if(contains(c, args...)) {
-            cursor -= 1;
-            return str.substr(begin, cursor - begin);
-        }
-        goto loop;
-    }
-
-    auto skip_while(const char key) -> void {
-        while(peek() == key) {
-            cursor += 1;
-        }
-    }
-};
-
 struct ParseElementNodeResult {
     Node node;
     bool leaf;
