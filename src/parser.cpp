@@ -1,7 +1,7 @@
 #include <stack>
 
 #include "macros/unwrap.hpp"
-#include "string-reader.hpp"
+#include "string-reader/string-reader.hpp"
 #include "util/trim.hpp"
 #include "xml.hpp"
 
@@ -33,7 +33,7 @@ auto parse_element_node(StringReader& reader) -> std::optional<ParseElementNodeR
         }
     }
     while(true) {
-        reader.skip_while(' ');
+        ensure(reader.skip_while(' '));
         unwrap(key, reader.read_until('=', '>'));
         ensure(reader.read()); // skip '=' or '>'
         if(key == "" || key == "/") {
